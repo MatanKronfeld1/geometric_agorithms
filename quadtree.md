@@ -97,21 +97,125 @@ For that we’ll use a tricky but very useful “compression” of the quadtree.
 Let $P$ be a set of $n$ points in the unit square.
 Let $\Phi(P) = \frac{\max_{p,q \in P} \|p - q\|}{\min_{p,q \in P, p \neq q} \|p - q\|}$
 
+Be the 𝒔𝒑𝒓𝒆𝒂𝒅 of $P$, which is the ratio between the 𝑑𝑖𝑎𝑚𝑒𝑡𝑒𝑟 of 𝑃 and the distance between the two closest points in $P$.
+
+---
+**Lemma:** Let $P$ be a set of $n$ points contained in the unit square, such that $\text{diam}(P) \ge \frac{1}{2}$, and Let $T$ be a quadtree of $P$ constructed over the unit square, where
+no leaf contains more than one point of $P$.
+
+**Then, the complexity of $T$ is bounded by the Spread $\Phi$:**
+
+1.  **Depth:** The maximal depth of $T$ is bounded by $O(\log\Phi)$.
+2.  **Construction Time:** $T$ can be constructed in $O(n \log\Phi)$ time.
+3.  **Total Size:** The total size (number of nodes) of $T$ is $O(n \log\Phi)$
+where $\Phi = \Phi(P)$
+
+---
+
+**Proof:**
+First, let's describe a construction algorothm for $T$.
+- Start with the root (representing the unit square) and keep splitting the node as long as it contains more than one points of $P$. if you create an empy leaf - remove it and store a pointer to this leaf in the parent node.
+
+**Depth, Construction Time, and Space Bound**
+For any $p, q \in P$ define level $u = \lfloor \lg \|p - q\| \rfloor - 1$.
+Let $v$ be a node at level $u$. The side length of its corresponding $\Box_v$ is $2^u$. Indeed,$diam(\square_v) \le \sqrt{2} \cdot 2^u = \sqrt{2} \cdot 2^{\lfloor \lg \|p - q\| \rfloor - 1} \le \frac {\sqrt{2}}{2} 2^{\lg\|p-q\|} = \frac {\sqrt{2}}{2}\|p-q\| < \|p-q\|$.
+
+In particular, any node of level $l = -\lceil \lg{\Phi(P)} \rceil - 2$ can contain at most one point of $P$
+Since the construction algorithm spends $O(n)$ time at each level of $T$, it follows that the construction time is O(n logΦ), and this also bounds the size of $T$.
+
+---
+
+One may realize that such tree $T$ may have a lot of nodes which are of degree 1 (has a single child).
+If a node $v$ has more than one child, then it contains at least two different quadrants $\Box_x, \Box_y$, both contain points of $P$.
+Thus, a quadtree might have a lot of "useless" nodes which one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
 
 
+---
 
+# Construction #
 
+We can replace such a sequence of edges by a single edge.
+We will store inside each node $v$ its square $\Box_v$ and its level $l(v)$.
 
+Given a path of vertices that are all of degree one, we will replace
+them with a single vertex $v$ that corresponds to the first vertex in this path, and its only child would be the last vertex in this path (which is the first node of degree larger
+than one).
 
+![bg right 90%](compressed.png)
 
+---
 
+**Key Insight: the number of compressed nodes is $\in$ $O(n)$**
 
+* **Compressed Nodes:** There are at most $O(n)$ nodes with degree 1.
+    * Every single-child node (except the root) must have a parent with **degree $\ge 2$** (otherwise, they would be merged).
+* **Branching Nodes:** There are at most **$n-1$** nodes with degree $\ge 2$.
+(Splitting a set of $n$ points into singletons requires at most $n-1$ splits).
+    * Therefore, we can "charge" every compressed node to a branching parent.
 
+---
 
+**Applications**
+Consider the problem of reporting all the points inside a given trianlge.
+A regular quadtree might require unbounded space, since the spread of the point set (and therefore the depth) might be arbitrarily large
+A compressed quadtree would use only $O(n)$ space
+The quadtree shown at the example the demostrates the "worse case" space complexity (the depth is $\in O(n)$ and it looks like a linked list)
 
+![bg right 90%](list.png)
 
+---
 
+# Efficient Construction: The "Bit Twiddling" Requirement
 
+To build Compressed Quadtrees efficiently we implicitly assume the **Unit RAM model**.
+This model allows us to perform bit-manipulation on real numbers in $O(1)$ time.
+
+**Definition ($bit_{\Delta}$):**
+Let $\alpha, \beta \in [0, 1)$ be two real numbers.
+$bit_{\Delta}(\alpha, \beta)$ is the index of the **first bit** after the period in which their binary representations differ.
+**Example:**
+* $\alpha = 1/4 = 0.01_2$
+* $\beta = 3/4 = 0.11_2$
+* $bit_{\Delta}(\alpha, \beta) = 1$ (They differ at the 1st bit).
+
+---
+
+**Lemma:**
+If one can compute a compressed quadtree of two points in constant time, then one can compute $bit_{\Delta}(\alpha, \beta)$ in constant time.
+
+**Proof**
+* Imagine building a 1D compressed quadtree (a trie) for the set $\{\alpha, \beta\}$.
+* Since they share a common prefix (the matching bits), the root will be a **compressed node**.
+* The length of this compressed edge corresponds exactly to the number of matching bits.
+* The level where the node finally splits is exactly the index $bit_{\Delta}(\alpha, \beta)$.
+
+Thus, building the tree quickly **is equivalent** to finding the first different bit quickly.
+
+---
+
+once one has such an operation at hand, it is quite easy to compute a
+compressed quadtree efficiently via “linearization”, and we'll see more details later at *dynamic quadtrees*.
+However, the resulting algorithm is somewhat counterintuitive. As a first step, we suggest a direct construction algorithm.
+
+## A construction algorithm ##
+ Let $P$ be a set of $n$ points in the unit square, with unbounded spread. We are interested in computing the compressed quadtree of $P$.
+
+ **Theorem:** Given a set $P$ of $n$ points in the plane, one can compute a compressed quadtree of $P$ in $O(n log n)$ time.
+
+---
+
+---
+
+# Proof: #
+Compute a disk $D$ of radius $r$ containing at least **$n/10$** points, where $r \le 2 \cdot r_{opt}(P, n/10)$, where $r_{opt}(P, n/10)$ is radius of the smallest disk contains $n/10$ points of $P$. This is done in linear time (lemma shown in chapter 1).
+
+Let $\alpha = 2^{\lfloor \lg r \rfloor}$
+Consider the grid $G_\alpha$.
+Since $diam(D)=2r \le 4\alpha$ (Because $2^{\lg{r} -1} \le \alpha$ and then $r/2 \le \alpha$)
+and the disk $D$ is covered by a $5×5 = 25$ grid cells of $G_\alpha$,
+then by pigeon hole principle there must be a cell in $G_\alpha$ that contains at least $n/10/25 = n/250$ points of $P$.
+
+---
 
 
 
