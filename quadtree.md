@@ -204,6 +204,8 @@ However, the resulting algorithm is somewhat counterintuitive. As a first step, 
 
 ---
 
+Lemmas
+
 ---
 
 # Proof: #
@@ -214,11 +216,53 @@ Consider the grid $G_\alpha$.
 Since $diam(D)=2r \le 4\alpha$ (Because $2^{\lg{r} -1} \le \alpha$ and then $r/2 \le \alpha$)
 and the disk $D$ is covered by a $5×5 = 25$ grid cells of $G_\alpha$,
 then by pigeon hole principle there must be a cell in $G_\alpha$ that contains at least $n/10/25 = n/250$ points of $P$.
+By another lemma, no cell of $G_\alpha$ contains more than $5(n/10)$ points = $n/2$ points.
+
+We can compute $G_{\alpha}$ and find the cell $\Box$ with maximal density. We are assured $\Box$ has at least $n/250$ points and the rest of the space has at least $n/2$ points.
+
+---
+## The Algorithm: Recursive Construction & Merging ##
+
+Let $P_{in}$ be the points inside $\square$ and $P_{out}$ the points outside ($\square$), we can proceed with the following recursion:
+Independently, build two compressed quadtrees:$\mathcal{T}_{in}$ for $P_{in}$ and $\mathcal{T}_{out}$ for $P_{out}$.
+Since all points in $P_{in}$ are inside the cell $\square$, the root of $\mathcal{T}_{in}$ will corresponds exactly to the region $\square$ (Let's call to this root $V_{in}$)
+Simililarly, since $P_{out}$ doesn't include points of $\square$, $\mathcal{T}_{out}$ would have an empty leaf representing the region $\square$ (let's call this leaf $V_{out}$). which will point to $V_{in}$.
+After the recursion we can "hang" $V_{in}$ on $V_{out}$, merging them into a single node.
+The bit$_∆(α, β)$ should be used in case we hang $\mathcal{T}_{in}$ on a compressed node of $\mathcal{T}_{out}$.
+using the RAM unit model, this can be done in constant time. Note that also $V_{out}$ and (therefore $V_{in}$) may be deleted because of the compression.
+
+The overall construction time:  $T(n) = T(P_{in}) + T(P_{out}) + O(n)$ = $O(n \log n)$."
+
+---
+# Balanced Quadtrees #
+
+**Lemma:** Given a list $C$ of $n$ canonical squares lying inside the unit square, one can construct a (minimal) compressed quadtree $T$ such that for any square $c \in C$, there exists a node $v \in T$, such that $\Box_{v}=c$. The construction time is $O(n \log n)$.
+
+**Proof:** For every canonical square $\Box \in C$ put two points in $\Box$ such that they belong to two different subsquares.
+Every $\square \in C$ will be represented by an internal node with at least two children, and every node that is not a leaf represents a canocial square from the list.
+then trimming away the leaves from the quadtree will leave us with the desired quadtree
 
 ---
 
+# Fingering #
+Similarly to the point location algorithm from the beginning, we would want to perform a fast algorithm for returning the a leaf's parent (which is essentially the smallest canonical square contain it)
+In worst case, that would take $\Omega(n)$ (demonstrated in example in previous slides)
 
+**Definition:**
+Let $T$ be a tree with $n$ nodes. A separator in $T$ is a node $v$, such that if we remove $v$ from $T$, we remain with a forest, and every tree in the forest has at most $\lceil n/2 \rceil$ vertices.
 
+---
+
+**Lemma.** Every tree has a separator, and it can be computed in linear time.
+
+**Proof.** Let $T$ be a rooted tree. We can compute for every node in the tree the number of nodes in its subtree in linear time.
+Let $v$ to be the lowest node in $T$ that its subtree has $\ge \lceil n/2 \rceil$ nodes in it.
+We can find this node by a DFS traversal.
+clearly such node must exist, since the subtree rooted in the root contains $n$ nodes and every subtree representing a leaf contains $n/2$ roots at most.
+
+Notice that by our DFS algorithm, all the children of $v$ don't contain less than $\lceil n/2 \rceil$ nodes (as they're deeper than $v$). since the tree rooted by $v$ contains more than $\lceil n/2 \rceil$ nodes, removing $v$ will create a forest where every tree contains less than $\lceil n/2 \rceil$ nodes. then $v$ is the separator ov $T$.
+
+---
 
 
 
