@@ -19,7 +19,7 @@ Let $P_{map}$ be a planar map. To be more concrete, let $P_{map}$ a partition of
 
 ## The Simple Solution - Construction ##
 
-- Build a tree $T$, where every node $𝑣$∈$T$ corresponds to a cell $\Box_v$
+- Build a tree $T$, where every node $v \in T$ corresponds to a cell $\Box_v$
 - the root corresponds to the unit square.
 - Each internal node has four children that correspond to the four equal sized squares formed by splitting $\Box_v$ by horizontal and vertical cuts
 - The conflict list of the square $\Box_v$ (i.e., the square associated with $v$) is a list of all the polygons of $P_{map}$ that intersect $𝑣$.
@@ -38,7 +38,7 @@ Let $P_{map}$ be a planar map. To be more concrete, let $P_{map}$ a partition of
 **Point-Location Query:**
 To identify the polygon containing a query point $q$ :
 - Start at the root of $T$
-- Traverse down the tree, iteratively moving to the child node whose quadrant contains 𝑞 (Note that this can be done in 𝑂(1))
+- Traverse down the tree, iteratively moving to the child node whose quadrant contains 𝑞 (Note that this can be done in 𝑂(1) time)
 - Terminate upon reaching a leaf.
 - Scan the leaf's conflict list to identify the specific polygon containing $q$ (And this takes also $𝑂(1)$ time).
 
@@ -60,7 +60,10 @@ The side length of $\Box_v$ is $2^{−𝑖}$, and it is a canonical square insid
 
 
 We’ll make a unique ID for each node by the following triple:
- $id(v) = (l(v), \lfloor x/r \rfloor, \lfloor y/r \rfloor)$ where $(x,y)$ is any point in $\Box_v$ and $r$ = $2^{l(v)}$  (i.e., $𝑟$ is the side length of the squares correspond to all the nodes at level $𝑙(𝑣)$.)
+ $$
+ id(v) = (l(v), \lfloor x/r \rfloor, \lfloor y/r \rfloor)
+ $$
+ where $(x,y)$ is any point in $\Box_v$ and $r$ = $2^{l(v)}$  (i.e., $𝑟$ is the side length of the squares correspond to all the nodes at level $𝑙(𝑣)$.)
 
 Notice that $𝑙(𝑣)$ represents the depth, $\lfloor x/r \rfloor$ represents the row, and $\lfloor y/r \rfloor$ represents the column.
 
