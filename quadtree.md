@@ -110,24 +110,30 @@ no leaf contains more than one point of $P$.
 3.  **Total Size:** The total size (number of nodes) of $T$ is $O(n \log\Phi)$
 where $\Phi = \Phi(P)$
 
----
-
-**Proof:**
-First, let's describe a construction algorothm for $T$.
+Before we jump into the proof, first let's describe a construction algorothm for $T$.
 - Start with the root (representing the unit square) and keep splitting the node as long as it contains more than one points of $P$. if you create an empy leaf - remove it and store a pointer to this leaf in the parent node.
 
-**Depth, Construction Time, and Space Bound**
-For any $p, q \in P$ define level $u = \lfloor \lg \|p - q\| \rfloor - 1$.
-Let $v$ be a node at level $u$. The side length of its corresponding $\Box_v$ is $2^u$. Indeed,$diam(\square_v) \le \sqrt{2} \cdot 2^u = \sqrt{2} \cdot 2^{\lfloor \lg \|p - q\| \rfloor - 1} \le \frac {\sqrt{2}}{2} 2^{\lg\|p-q\|} = \frac {\sqrt{2}}{2}\|p-q\| < \|p-q\|$.
+---
 
-In particular, any node of level $l = -\lceil \lg{\Phi(P)} \rceil - 2$ can contain at most one point of $P$
-Since the construction algorithm spends $O(n)$ time at each level of $T$, it follows that the construction time is O(n logΦ), and this also bounds the size of $T$.
+# Proof: #
+**Depth:** For any $p, q \in P$ define level $u = \lfloor \lg \|p - q\| \rfloor - 1$.
+**claim:** a node $v$ of level $u$ that contains $p$ ,must not contain $q$
+**proof:** Let $v$ be a node at level $u$. The side length of its corresponding $\Box_v$ is $2^u$. Indeed,
+$$
+diam(\square_v) \le \sqrt{2} \cdot 2^u = \sqrt{2} \cdot 2^{\lfloor \lg \|p - q\| \rfloor - 1} \le \frac {\sqrt{2}}{2} 2^{\lg\|p-q\|} = \frac {\sqrt{2}}{2}\|p-q\| < \|p-q\|
+$$
+So looking at $P$
+$$
+\min_{p,q \in P, p \neq q} \|p - q\| = \frac{1}{\Phi(P)}\cdot \text {diam} (P) \ge \frac{\frac{1}{2}}{\Phi(P)} = \frac{1}{2\Phi(P)}
+$$
+So any node of level $l$ = $\lfloor \lg{\frac{1}{2\Phi(P)}}\rfloor - 1 = -\lceil \lg{2\Phi(P)}\rceil - 2$ contains at most one point of $P$, so the total depth $\in O(\lg {\Phi(P)})$.
 
 ---
 
+**Construction time:** The construction algorithm spends $O(n)$ time at each level of $T$, it follows that the construction time is $O(n\lg{\Phi(P)})$, and this also bounds the size of $T$.
+
 One may realize that such tree $T$ may have a lot of nodes which are of degree 1 (has a single child).
-If a node $v$ has more than one child, then it contains at least two different quadrants $\Box_x, \Box_y$, both contain points of $P$.
-Thus, a quadtree might have a lot of "useless" nodes which one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
+If a node $v$ has more than one child, then it contains at least two different quadrants $\Box_x, \Box_y$, both contain points of $P$. Thus, a quadtree might have a lot of "useless" nodes which one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
 
 
 ---
@@ -260,11 +266,82 @@ Let $v$ to be the lowest node in $T$ that its subtree has $\ge \lceil n/2 \rceil
 We can find this node by a DFS traversal.
 clearly such node must exist, since the subtree rooted in the root contains $n$ nodes and every subtree representing a leaf contains $n/2$ roots at most.
 
-Notice that by our DFS algorithm, all the children of $v$ don't contain less than $\lceil n/2 \rceil$ nodes (as they're deeper than $v$). since the tree rooted by $v$ contains more than $\lceil n/2 \rceil$ nodes, removing $v$ will create a forest where every tree contains less than $\lceil n/2 \rceil$ nodes. then $v$ is the separator ov $T$.
+Notice that by our DFS algorithm, all the children of $v$ don't contain less than $\lceil n/2 \rceil$ nodes (as they're deeper than $v$). since the tree rooted by $v$ contains more than $\lceil n/2 \rceil$ nodes, removing $v$ will create a forest where every tree contains less than $\lceil n/2 \rceil$ nodes. then $v$ is the separator of $T$.
+
+---
+construction algorithm for a balanced quadtree:
+
+Find a separator $v \in T$ and create a root node $f_{v}$ for $T'$ which has a pointer to $v$; now recursively build a finger tree for each tree of $T \setminus \{v\}$.
+Hang the resulting finger trees on $f_{v}$. The resulting tree is the required finger tree $T'$.
+
+Given a query point $q$, we traverse $T'$, where at node $f_{v} \in T'$, we check whether the query point $q \in \Box_{v}$, where $v$ is the corresponding node of $T$. If $q \notin \Box_{v}$, we continue the search into the child of $f_{v}$ which corresponds to the connected component outside, that was hung on $f_{v}$. Otherwise, we continue into the child that contains $q$: naturally, we have to check out the $O(1)$ children of $v$ to decide which one we should continue the search into. This takes constant time per node. As for the depth for the finger tree $T'$, observe $D(n) \le 1 + D(\lceil n/2 \rceil) = O(\log n)$.
+
+Thus, a point-location query in $T'$ takes logarithmic time.
+
+---
+
+Theorem: Given a compressed quadtree $\widehat{T}$ of size $n$, one can preprocess it, in time $O(n \log n)$ such that given a query point $q$, one can return the lowest node in $\widehat{T}$ whose region contains $q$ in $O(\log n)$ time.
+Proof. We just need to bound the preprocessing time. Each level we scan all the nodes in $O(n)$ and we might have depth of up to $\lg{(n)}$ before reaching to leaves (as all the trees in the forest has maximal $\lceil n/2 \rceil$ size)
+then we get the preprocessing time is in $O(n\log{n})$
+
+---
+
+Z order and Q order
+
+Here we show how to store compressed quadtrees using any data-structure for ordered sets. The idea is to define an order on the compressed quadtree nodes and then store the compressed nodes in a data-structure for ordered sets. We show how to perform basic operations using this representation. In particular, we show how to perform insertions and deletions. This provides us with a simple implementation of dynamic compressed quadtrees. We start our discussion with regular quadtrees and later on discuss how to handle compressed quadtrees.
+
+---
+
+# Q-order and Z-Order #
+
+Consider a regular quadtree $T$ and a DFS traversal of $T$, where the DFS always traverse the children of a node in the same relative order.
+
+Comparing Canonical Squares ($\Box$):
+- The order is determined by the visit time during the traversal.
+- $\Box < \widehat{\Box}$ if the traversal visits $\Box$ before $\widehat{\Box}$.
+
+Extending to Points: 
+- If a point $p$ is inside a square $\Box$, then $\Box < p$. otherwise, $p$ lies in other cell, $\overline{\Box}$.
+Then $\Box < p$ $\iff$ $\Box < \overline{\Box}$ .
+- If two points lie in different cells, then $p < q$ $\iff$ $\Box_{p} < \Box_{q}$. 
+
+---
+
+## Z-order ##
+
+When the ordering is restricted only to points by the DFS order of a given quadtree, we'll call this order **Z-order**.
+
+Formally, this order is induced by a specific bijection
+
+$$
+z: [0, 1) \to [0, 1)^{2}
+$$
+
+where given a real number $\alpha \in [0,1)$, with the binary expansion $\alpha=0.x_{1}x_{2}x_{3}...$, the Z-order mapping of $\alpha$ is the point
+$$
+z(\alpha)=(0.x_{2}x_{4}x_{6}..., 0.x_{1}x_{3}x_{5}...)
+$$
 
 ---
 
 
+# The connection betwwen Z-order and DFS order #
 
+Let $p \in [0,1)^{2}$ and think of a point-location query in an infinite quadtree for $p$.
+
+In the top level of the quadtree we have four options to continue the search:
+
+- If $y(p) \in [0,1/2)$ then the first bit in the encoding is 0
+- If $y(p) \in [1/2,1)$, the first bit output is 1.
+
+Similar encoding of the second bit represents $x(p)$, and so we solved the query for the first level.
+
+This search cotinue to the next level, and the $2i+1$ and $2i+2$ bits in the encoding of $p$ represent the $i$-th bits of $y(p)$ and $x(p)$.
+
+Let $enc(p)$ denote the number in the range $[0, 1)$ encoded by this process.
+
+---
+
+**Claim** For any two points $p, q \in [0,1)^{2}$, we have that $p \prec q$ if and only if $enc(p) < enc(q)$
 
 
