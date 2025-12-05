@@ -224,18 +224,22 @@ Lemmas
 ---
 
 # Proof: #
-Compute a disk $D$ of radius $r$ containing at least **$n/10$** points, where $r \le 2 \cdot r_{opt}(P, n/10)$, where $r_{opt}(P, n/10)$ is radius of the smallest disk contains $n/10$ points of $P$. This is done in linear time (lemma shown in chapter 1).
+Compute a disk $D$ of radius $r$ containing at least **$n/10$** points, where $r \le 2 \cdot r_{opt}(P, n/10)$
 
-Let $\alpha = 2^{\lfloor \lg r \rfloor}$
+Let $\alpha = 2^{\lfloor \lg{r} \rfloor}$
+$\text {diam} (D)=2r \le 4\alpha$ (Because $2^{\lg{r} -1} \le \alpha$ and then $r/2 \le \alpha$)
 Consider the grid $G_\alpha$.
-Since $diam(D)=2r \le 4\alpha$ (Because $2^{\lg{r} -1} \le \alpha$ and then $r/2 \le \alpha$)
-and the disk $D$ is covered by a $5×5 = 25$ grid cells of $G_\alpha$,
-then by pigeon hole principle there must be a cell in $G_\alpha$ that contains at least $n/10/25 = n/250$ points of $P$.
-By another lemma, no cell of $G_\alpha$ contains more than $5(n/10)$ points = $n/2$ points.
+The disk $D$ is covered by at most $5×5 = 25$ grid cells of $G_\alpha$,
+Then, by pigeon hole principle there must be a cell in $G_\alpha$ that contains at least $n/10/25 = n/250$ points of $P$.
+
+![bg right 90%](pigeon.png)
+
+---
+
+By the previous lemma, no cell of $G_\alpha$ contains more than $5(n/10)$ points = $n/2$ points.
 
 We can compute $G_{\alpha}$ and find the cell $\Box$ with maximal density. We are assured $\Box$ has at least $n/250$ points and the rest of the space has at least $n/2$ points.
 
----
 ## The Algorithm: Recursive Construction & Merging ##
 
 Let $P_{in}$ be the points inside $\square$ and $P_{out}$ the points outside ($\square$), we can proceed with the following recursion:
@@ -243,6 +247,9 @@ Independently, build two compressed quadtrees:$\mathcal{T}_{in}$ for $P_{in}$ an
 Since all points in $P_{in}$ are inside the cell $\square$, the root of $\mathcal{T}_{in}$ will corresponds exactly to the region $\square$ (Let's call to this root $V_{in}$)
 Simililarly, since $P_{out}$ doesn't include points of $\square$, $\mathcal{T}_{out}$ would have an empty leaf representing the region $\square$ (let's call this leaf $V_{out}$). which will point to $V_{in}$.
 After the recursion we can "hang" $V_{in}$ on $V_{out}$, merging them into a single node.
+
+---
+
 The bit$_∆(α, β)$ should be used in case we hang $\mathcal{T}_{in}$ on a compressed node of $\mathcal{T}_{out}$.
 using the RAM unit model, this can be done in constant time. Note that also $V_{out}$ and (therefore $V_{in}$) may be deleted because of the compression.
 
