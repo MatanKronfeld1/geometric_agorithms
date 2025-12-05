@@ -56,41 +56,43 @@ Consider a node $𝑣$ of a quadtree of depth $𝑖$ (the root has depth 0) and 
 
 The side length of $\Box_v$ is $2^{−𝑖}$, and it is a canonical square inside a canonical grid $𝐺_𝑟$. We will refer to $𝑙(𝑣)=−𝑖$ as the **level** of $𝑣$.
 
----
-
+with a **point-location query**, given a quadtree $T$ and a point $q$, we would want to return the canonical square that contains only $q$ (or, on other word - a leaf containing $q$).
 
 We’ll make a unique ID for each node by the following triple:
+
+---
+
  $$
  id(v) = (l(v), \lfloor x/r \rfloor, \lfloor y/r \rfloor)
  $$
- where $(x,y)$ is any point in $\Box_v$ and $r$ = $2^{l(v)}$  (i.e., $𝑟$ is the side length of the squares correspond to all the nodes at level $𝑙(𝑣)$.)
-
-Notice that $𝑙(𝑣)$ represents the depth, $\lfloor x/r \rfloor$ represents the row, and $\lfloor y/r \rfloor$ represents the column.
+ Where $(x,y)$ is any point in $\Box_v$ and $r$ = $2^{l(v)}$  (i.e., $𝑟$ is the side length of the squares correspond to all the nodes at level $𝑙(𝑣)$). Notice that $𝑙(𝑣)$ represents the depth, $\lfloor x/r \rfloor$ represents the row, and $\lfloor y/r \rfloor$ represents the column.
 
 ![w: 100 center](ids.png)
 
 ---
 
 # Fast point-location in a quadtree. #
-Given a query point 𝑞 and a level $𝑙$ we can compute the square at level $𝑙$ containing $𝑞$ at $𝑂(1)$ time.
-Let **QTGetNode($T$, $q$, $d$)** denote the procedure that, in constant time, returns the node $𝒗$ of depth $𝑑$, where $𝑞$ is any point inside square $\Box_v$
-We can create a hash-table storing all the IDs of nodes in the quadtree, (since out tree is already built)
+Given a query point 𝑞 and a level $𝑙$ we can compute the ID of the square containing it at $𝑂(1)$ time.
+So given a quadtree $T$, a natural algorithm for a point location query would be to store all IDs of nodes in $T$ in a hash-table, and compute the maximal height $h$ of $T$.
+
+Let **QTGetNode($T$, $q$, $d$)** denote the procedure that, in constant time, returns the node $𝒗$ of depth $𝑑$ (i.e., its level is -$d$), where $𝑞$ is any point inside square its corresponding square $\Box_v$.
 
 ---
-Like in Binary search, we’ll use QTFastPLI($T$, $q$, $l$, $h$), 
-with 𝑚 representing the median between the upper level ($𝑙$) and the lower level ($ℎ$)
+**Binary search for point-location queries**
+ We’ll use QTFastPLI($T$, $q$, $l$, $h$), with 𝑚 representing the median between the lowest depth ($𝑙$) and the highest depth ($ℎ$).
 - If $𝑣$ = null then we searched too deep, so we’ll recurse with QTFastPLI($T$, $q$, $l$, $m-1$)       
-- Else, if $𝑣$ is a leaf then we’re done.
+- Else, if $𝑣$ is a leaf we’re done.
 - Otherwise – we need to search deeper, so we’ll recurse with QTFastPLI($T$, $q$, $m+1$, $h$)
 
 ![bg right 90%](alg.png)
 
 ---
-# So far #
+## Summing it up ##
 Given a quadtree $𝑇$ of size $𝑛$ and of height $ℎ$, one can preprocess it (using
 hashing), in linear time, such that one can perform a point-location query in $𝑇$ in $𝑂(𝑙𝑜𝑔(ℎ))$
 
-**The problem:** $ℎ$ isn’t bounded, so the query can be very inefficient.
+**The problem:**
+$ℎ$ isn’t bounded, so the query can be very inefficient.
 For that we’ll use a tricky but very useful “compression” of the quadtree.
 
 ---
@@ -129,14 +131,15 @@ So looking at $P$
 $$
 \min_{p,q \in P, p \neq q} \|p - q\| = \frac{1}{\Phi(P)}\cdot \text {diam} (P) \ge \frac{\frac{1}{2}}{\Phi(P)} = \frac{1}{2\Phi(P)}
 $$
-So any node of level $l$ = $\lfloor \lg{\frac{1}{2\Phi(P)}}\rfloor - 1 = -\lceil \lg{2\Phi(P)}\rceil - 2$ contains at most one point of $P$, so the total depth $\in O(\lg {\Phi(P)})$.
+So any node of level $l$ = $\lfloor \lg{\frac{1}{2\Phi(P)}}\rfloor - 1 = \lfloor -\lg{\Phi(P)} -1 \rfloor -1 = -\lceil \lg{\Phi(P)}\rceil - 2$ contains at most one point of $P$, so the total depth $\in O(\lg {\Phi(P)})$.
 
 ---
 
 **Construction time:** The construction algorithm spends $O(n)$ time at each level of $T$, it follows that the construction time is $O(n\lg{\Phi(P)})$, and this also bounds the size of $T$.
 
-One may realize that such tree $T$ may have a lot of nodes which are of degree 1 (has a single child).
-If a node $v$ has more than one child, then it contains at least two different quadrants $\Box_x, \Box_y$, both contain points of $P$. Thus, a quadtree might have a lot of "useless" nodes which one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
+One may realize that such tree $T$ may have a lot of nodes which are of degree 1 (have a single child). For example, if most points lie within a very small cell.
+
+These "chains" of useless nodes don't add information and one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
 
 
 ---
@@ -147,26 +150,29 @@ We can replace such a sequence of edges by a single edge.
 We will store inside each node $v$ its square $\Box_v$ and its level $l(v)$.
 
 Given a path of vertices that are all of degree one, we will replace
-them with a single vertex $v$ that corresponds to the first vertex in this path, and its only child would be the last vertex in this path (which is the first node of degree larger
-than one).
+them with a single vertex $v$ that corresponds to the first vertex in this path, and its only child would be the last vertex in this path (which is the first node in this path of degree larger than one).
 
 ![bg right 90%](compressed.png)
 
 ---
 
-**Key Insight: the number of compressed nodes is $\in$ $O(n)$**
+## A compressed quadtree has a linear size ##
 
-* **Compressed Nodes:** There are at most $O(n)$ nodes with degree 1.
-    * Every single-child node (except the root) must have a parent with **degree $\ge 2$** (otherwise, they would be merged).
+* **Compressed Nodes:** In a compressed quadtree, Every node with a single child (except the root) must have a parent with *degree $\ge 2$* (otherwise, they would be merged).
 * **Branching Nodes:** There are at most **$n-1$** nodes with degree $\ge 2$.
 (Splitting a set of $n$ points into singletons requires at most $n-1$ splits).
     * Therefore, we can "charge" every compressed node to a branching parent.
+
+**There for, a compressed tree has linear size**
+(However, the depth can also be linear in the worst case)
 
 ---
 
 **Applications**
 Consider the problem of reporting all the points inside a given trianlge.
-A regular quadtree might require unbounded space, since the spread of the point set (and therefore the depth) might be arbitrarily large
+
+A regular quadtree might require unbounded space, since the spread of the point set (and therefore the depth) might be arbitrarily large.
+
 A compressed quadtree would use only $O(n)$ space
 The quadtree shown at the example the demostrates the "worse case" space complexity (the depth is $\in O(n)$ and it looks like a linked list)
 
@@ -193,7 +199,7 @@ $bit_{\Delta}(\alpha, \beta)$ is the index of the **first bit** after the period
 If one can compute a compressed quadtree of two points in constant time, then one can compute $bit_{\Delta}(\alpha, \beta)$ in constant time.
 
 **Proof**
-* Imagine building a 1D compressed quadtree (a trie) for the set $\{\alpha, \beta\}$.
+* Imagine building a 1D compressed quadtree for the set $\{\alpha, \beta\}$.
 * Since they share a common prefix (the matching bits), the root will be a **compressed node**.
 * The length of this compressed edge corresponds exactly to the number of matching bits.
 * The level where the node finally splits is exactly the index $bit_{\Delta}(\alpha, \beta)$.
