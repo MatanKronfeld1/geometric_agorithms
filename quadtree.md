@@ -16,10 +16,7 @@ Let $P_{map}$ be a planar map. To be more concrete, let $P_{map}$ a partition of
 **Our goal** – We want to preprocess the maps for point location queries, so given a point $p$, quickly find which polygons contain it. There are numerous data-sctructures that can do it, let consider the following data structure.
 
 ---
-
-## The Simple Solution - Construction ##
-
-- Build a tree $T$, where every node $v \in T$ corresponds to a cell $\Box_v$
+# General structure of the tree #
 - the root corresponds to the unit square.
 - Each internal node has four children that correspond to the four equal sized squares formed by splitting $\Box_v$ by horizontal and vertical cuts
 - The conflict list of the square $\Box_v$ (i.e., the square associated with $v$) is a list of all the polygons of $P_{map}$ that intersect $𝑣$.
@@ -42,9 +39,13 @@ To identify the polygon containing a query point $q$ :
 - Terminate upon reaching a leaf.
 - Scan the leaf's conflict list to identify the specific polygon containing $q$ (And this takes also $𝑂(1)$ time).
 
+---
+
+![bg right 90%](color_map.png)
+
 **Complexity Analysis:**
 *Worst Case*: If polygons are "long and skinny," they may intersect many squares without being fully contained. This can lead to a tree of unbounded depth and complexity.
-*Reasonable Input:* - for reasonable inputs, the complexity of the quadtree will be linear in the size of the input (a proof for fat triangles polygons is shown at the end)
+*Reasonable Input:* - for reasonable inputs, the complexity of the quadtree will be linear in the size of the input
 
 ---
 
@@ -78,6 +79,8 @@ So given a quadtree $T$, a natural algorithm for a point location query would be
 Let **QTGetNode($T$, $q$, $d$)** denote the procedure that, in constant time, returns the node $𝒗$ of depth $𝑑$ (i.e., its level is -$d$), where $𝑞$ is any point inside square its corresponding square $\Box_v$.
 
 ---
+
+Note: hhh
 **Binary search for point-location queries**
  We’ll use QTFastPLI($T$, $q$, $l$, $h$), with 𝑚 representing the median between the lowest depth ($𝑙$) and the highest depth ($ℎ$).
 - If $𝑣$ = null then we searched too deep, so we’ll recurse with QTFastPLI($T$, $q$, $l$, $m-1$)       
@@ -151,10 +154,9 @@ We will store inside each node $v$ its square $\Box_v$ and its level $l(v)$.
 
 Given a path of vertices that are all of degree one, we will replace
 them with a single vertex $v$ that corresponds to the first vertex in this path, and its only child would be the last vertex in this path (which is the first node in this path of degree larger than one).
-
 ![bg right 90%](compressed.png)
 
----
+--- 
 
 ## A compressed quadtree has a linear size ##
 
@@ -164,11 +166,11 @@ them with a single vertex $v$ that corresponds to the first vertex in this path,
     * Therefore, we can "charge" every compressed node to a branching parent.
 
 **There for, a compressed tree has linear size**
-(However, the depth can also be linear in the worst case)
 
 ---
 
 **Applications**
+
 Consider the problem of reporting all the points inside a given trianlge.
 
 A regular quadtree might require unbounded space, since the spread of the point set (and therefore the depth) might be arbitrarily large.
@@ -302,9 +304,12 @@ then we get the preprocessing time is in $O(n\log{n})$
 
 ---
 
-Z order and Q order
+# Dynamic quadtrees #
 
-Here we show how to store compressed quadtrees using any data-structure for ordered sets. The idea is to define an order on the compressed quadtree nodes and then store the compressed nodes in a data-structure for ordered sets. We show how to perform basic operations using this representation. In particular, we show how to perform insertions and deletions. This provides us with a simple implementation of dynamic compressed quadtrees. We start our discussion with regular quadtrees and later on discuss how to handle compressed quadtrees.
+We would want to store the information of quadtrees in any data-structure for **ordered sets**. (for example, red black trees)
+The idea is to define an order on the compressed quadtree nodes and then store the compressed nodes in a data-structure for ordered sets.
+Then, we will be able to show how to perform basic operations using this representation, In particular, how to perform insertions and deletions.
+We start our discussion with regular quadtrees and later on discuss how to handle compressed quadtrees.
 
 ---
 
@@ -338,8 +343,9 @@ $$
 z(\alpha)=(0.x_{2}x_{4}x_{6}..., 0.x_{1}x_{3}x_{5}...)
 $$
 
----
+![](qorder.png)
 
+---
 
 # The connection betwwen Z-order and DFS order #
 
@@ -371,4 +377,68 @@ Let $\Delta=2^{l}$, and let $x^{\prime}=\Delta\lfloor x_p/\Delta\rfloor$ and $y^
 $$
 lca(p,q)=[x^{\prime},x^{\prime}+\Delta) \times [y^{\prime},y^{\prime}+\Delta)
 $$
+
+---
+
+## Now we can also compare cells ##
+
+**definition**: $lca$ of two cells is the $lca$ of their centers.
+Given two cells $\Box$ and $\widehat{\Box}$, then their Q-order:
+- If $\Box \subseteq \widehat{\Box}$, then $\widehat{\Box} \prec \Box$.
+- if $\widehat{\Box} \subseteq \Box$, then $\Box \prec \widehat{\Box}$.
+- Otherwise, let $\widetilde{\Box}=lca(\Box,\widehat{\Box})$. since $\Box,\widehat{\Box}$ lie in to different children of $\widetilde{\Box}$, then according our DFS taversal, we can determine their order in constant time.
+
+---
+
+**Computing $bit_{\Delta}$ efficiently.**
+
+In real world computer, once you are given a number, it is easy to access its mantissa and exponent in constant time.
+- If the exponents are different, then $bit_{\Delta}$ can be computed in constant time.
+
+- Otherwise, we can easily $\oplus_{xor}$ the mantissas of both numbers.
+Now, we can  convert to a float number again and the exponent would store $bit_{\Delta}$.
+
+Observe that all these operations are implemented in hardware in the CPU and require only constant time.
+
+---
+
+## Basic operations on a (regular) quadtree stored using Q-order ##
+
+Let $T$ be a regular quadtree, with its nodes stored in an ordered-set data-structure.
+Using the Q-order over the cells. We next describe how to implement some basic operations on this quadtree.
+
+**Point-location query:** Given a query point $q \in [0,1]^{2}$, we would like to find the leaf $v$ of $T$ such that its cell contains $q$. remember that $q$ is not nesseceraly $\in T$.
+
+Let $\Box$ be the last cell in this list such that $\Box \prec q$.
+- **Claim**: $\Box$ is a leaf that contains $q$
+- **proof:** let $\Box_{q}$ be the leaf of $T$ whose cell contains $q$. (It must exists as all regions correspond to a leaf). Assume other leaf $\Box_{q}$ contains $q$ such that  $\Box_{q} \prec \Box \prec q$.
+Then by definition $\Box_{q} \subseteq \Box$, contraiction to $\Box_{q}$ being a leaf.
+
+---
+
+## Operations on a compressed quadtree stored using the Q-order ##
+
+Note that a simple predecessor query for a point $q$ might yield a false positive. The returned node does not necessarily contain $q$, as $q$ might reside in a 'hole' or an empty region not explicitly stored in $T$.
+
+![bg right 90%](alg_com.png)
+
+The algorithm in the right can solve this problem:
+
+---
+
+
+We deal woth 2 different cases:
+- $\Box_v$ is the predecessor of $q$ and $q \in \Box_v$. then we're done
+-  $\Box_v$ is the predecessor of $q$ and $q \notin \Box_v$. Then we need to find $\Box = \text{lca}(\Box_v, q)$ (in order to find the smallest square the contains both of them).
+Then the algorithm finds $\Box_w$ the predecessor of $\Box$ in $T$.
+    - if $\Box_w$ = $\Box$, then we're done.
+    - otherwise, $\Box_w$ is a square  **contains** $\Box$ (by the definition of Q order) and then its indeed the maximal square according to $\prec$ that contains $q$.
+
+---
+
+## Insertion/Deletion in a compressed quadtree ##
+
+
+
+
 
