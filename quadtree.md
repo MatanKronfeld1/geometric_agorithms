@@ -260,14 +260,14 @@ The overall construction time:  $T(n) = T(P_{in}) + T(P_{out}) + O(n)$ = $O(n \l
 
 **Lemma:** Given a list $C$ of $n$ canonical squares lying inside the unit square, one can construct a (minimal) compressed quadtree $T$ such that for any square $c \in C$, there exists a node $v \in T$, such that $\Box_{v}=c$. The construction time is $O(n \log n)$.
 
-**Proof:** For every canonical square $\Box \in C$ put two points in $\Box$ such that they belong to two different subsquares.
+**Proof:** For every canonical square $\Box \in C$ put two points in $\Box$ such that they belong to two different subsquares of $\Box$.
 Every $\square \in C$ will be represented by an internal node with at least two children, and every node that is not a leaf represents a canocial square from the list.
 then trimming away the leaves from the quadtree will leave us with the desired quadtree
 
 ---
 
 # Fingering #
-Similarly to the point location algorithm from the beginning, we would want to perform a fast algorithm for returning the a leaf's parent (which is essentially the smallest canonical square contain it)
+Similarly to the point location algorithm from the beginning, we would want to perform a fast algorithm for returning a leaf (which is essentially the smallest canonical square contain it)
 In worst case, that would take $\Omega(n)$ (demonstrated in example in previous slides)
 
 **Definition:**
@@ -314,12 +314,12 @@ Consider a regular quadtree $T$ and a DFS traversal of $T$, where the DFS always
 
 Comparing Canonical Squares ($\Box$):
 - The order is determined by the visit time during the traversal.
-- $\Box < \widehat{\Box}$ if the traversal visits $\Box$ before $\widehat{\Box}$.
+- $\Box \prec \widehat{\Box}$ if the traversal visits $\Box$ before $\widehat{\Box}$.
 
 Extending to Points: 
 - If a point $p$ is inside a square $\Box$, then $\Box < p$. otherwise, $p$ lies in other cell, $\overline{\Box}$.
-Then $\Box < p$ $\iff$ $\Box < \overline{\Box}$ .
-- If two points lie in different cells, then $p < q$ $\iff$ $\Box_{p} < \Box_{q}$. 
+Then $\Box \prec p$ $\iff$ $\Box \prec \overline{\Box}$ .
+- If two points lie in different cells, then $p \prec q$ $\iff$ $\Box_{p} \prec \Box_{q}$. 
 
 ---
 
@@ -354,10 +354,21 @@ Similar encoding of the second bit represents $x(p)$, and so we solved the query
 
 This search cotinue to the next level, and the $2i+1$ and $2i+2$ bits in the encoding of $p$ represent the $i$-th bits of $y(p)$ and $x(p)$.
 
-Let $enc(p)$ denote the number in the range $[0, 1)$ encoded by this process.
-
 ---
 
-**Claim** For any two points $p, q \in [0,1)^{2}$, we have that $p \prec q$ if and only if $enc(p) < enc(q)$
+Let $enc(p)$ denote the number in the range $[0, 1)$ encoded by this process.
 
+For any two points $p, q \in [0,1)^{2}$, we have that $p \prec q$ if and only if $enc(p) < enc(q)$ (as previously demonstrated)
+
+**We need to be able to order any two given cells/points according to $\prec$ quickly.**
+
+**Definition:** For any two points $p, q \in [0,1]^{2}$ let $lca(p,q)$ denote the smallest canonical square that contains both $p$ and $q$.
+Then
+- its level $l =  1 - \min(bit_{\Delta}(x_p, x_q), bit_{\Delta}(y_{p},y_{q}))$
+- its side length is $2^l$
+
+Let $\Delta=2^{l}$, and let $x^{\prime}=\Delta\lfloor x_p/\Delta\rfloor$ and $y^{\prime}=\Delta\lfloor y_p/\Delta\rfloor$. ($x^{\prime}$ and $y^{\prime}$  represent where the cell start), Then:
+$$
+lca(p,q)=[x^{\prime},x^{\prime}+\Delta) \times [y^{\prime},y^{\prime}+\Delta)
+$$
 
