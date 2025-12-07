@@ -17,8 +17,9 @@ Let $P_{map}$ be a planar map. To be more concrete, let $P_{map}$ a partition of
 
 ---
 # General structure of the tree #
+- every node $v$ correspond to a cell inside the unit square, $\Box_{v}$
 - the root corresponds to the unit square.
-- Each internal node has four children that correspond to the four equal sized squares formed by splitting $\Box_v$ by horizontal and vertical cuts
+- Each internal node has four children that correspond to the four equal sized squares it contains.
 - The conflict list of the square $\Box_v$ (i.e., the square associated with $v$) is a list of all the polygons of $P_{map}$ that intersect $𝑣$.
 
 ---
@@ -111,12 +112,10 @@ Be the 𝒔𝒑𝒓𝒆𝒂𝒅 of $P$, which is the ratio between the 𝑑𝑖�
 **Lemma:** Let $P$ be a set of $n$ points contained in the unit square, such that $\text{diam}(P) \ge \frac{1}{2}$, and Let $T$ be a quadtree of $P$ constructed over the unit square, where
 no leaf contains more than one point of $P$.
 
-**Then, the complexity of $T$ is bounded by the Spread $\Phi$:**
-
-1.  **Depth:** The maximal depth of $T$ is bounded by $O(\log\Phi)$.
-2.  **Construction Time:** $T$ can be constructed in $O(n \log\Phi)$ time.
-3.  **Total Size:** The total size (number of nodes) of $T$ is $O(n \log\Phi)$
-where $\Phi = \Phi(P)$
+**Then:**
+1.  **Depth:** The maximal depth of $T$ is bounded by $O(\log\Phi(P))$.
+2.  **Construction Time:** $T$ can be constructed in $O(n \log\Phi(P))$ time.
+3.  **Total Size:** The total size (number of nodes) of $T$ is $O(n \log\Phi(P))$
 
 Before we jump into the proof, first let's describe a construction algorothm for $T$.
 - Start with the root (representing the unit square) and keep splitting the node as long as it contains more than one points of $P$. if you create an empy leaf - remove it and store a pointer to this leaf in the parent node.
@@ -142,7 +141,8 @@ So any node of level $l$ = $\lfloor \lg{\frac{1}{2\Phi(P)}}\rfloor - 1 = \lfloor
 
 One may realize that such tree $T$ may have a lot of nodes which are of degree 1 (have a single child). For example, if most points lie within a very small cell.
 
-These "chains" of useless nodes don't add information and one should be able to get rid of and get a more compact data structure.![bg right 80%](uncompressed.png)
+These "chains" of useless nodes don't add information.
+![bg right 80%](uncompressed.png)
 
 
 ---
@@ -220,8 +220,39 @@ However, the resulting algorithm is somewhat counterintuitive. As a first step, 
  **Theorem:** Given a set $P$ of $n$ points in the plane, one can compute a compressed quadtree of $P$ in $O(n log n)$ time.
 
 ---
+**Lemma 1.12.** Given a set $P$ of $n$ points in the plane and parameter $k$, the algorithm algDCoverSlow(P, k) computes, in $O(n(n/k)^{2})$ deterministic time, a circle $D$ that contains $k$ points of $P$ and $\text{radius}(D) \le 2r_{\text{opt}}(P, k)$, where $r_{\text{opt}}(P, k)$ is the radius of the smallest disk in the plane containing $k$ points of $P$.
 
-Lemmas
+**Lemma 1.19.** For any point set $P$ and $\alpha > 0$, we have that if $\alpha \le 2r_{\text{opt}}(P,k)$, then any cell of the grid $G_{\alpha}$ contains at most $5k$ points; that is, $gd_{\alpha}(P) \le 5k$.
+
+---
+
+**algDCoverSlow(P, k).**
+Let $P$ be a set of $n$ points in the plane.
+- Compute a set of $m = O(n/k)$ horizontal lines $h_{1},...,h_{m}$ such that between two consecutive horizontal lines, there are at most $k/4$ points of $P$ in the strip they define.
+- Consider the points of $P$ sorted in increasing $y$ ordering, and create a horizontal line through the points of rank $(k/4), 2(k/4)...\lfloor n/(k/4) \rfloor(k/4)$. This can be done in $O(n \log (n/k))$ time using determinic median selection with recursion.
+- do the same with vertical lines according to the points' x coordinates.
+
+Consider the (non-uniform) grid $G$ induced by the lines $h_{1},...,h_{m}$ and $v_{1},...,v_{m}$. Let $X$ be the set of all the intersection points of these lines; that is, $X$ is the set of vertices of $G$. For every point $p \in X$, compute (in linear time) the smallest disk centered at $p$ that contains $k$ points of $P$, and return the smallest disk computed.
+
+---
+
+**Proof.** Since $|X| = O((n/k)^{2})$ and for each such point finding the smallest disk containing $k$ points takes $O(n)$ time, the running time bound follows.
+As for correctness, we claim that $D_{\text{opt}}(P, k)$ contains at least one point of $X$.
+
+Consider the center $u$ of $D_{\text{opt}}(P, k)$, and let $c$ be the cell of $G$ that contains $u$. Clearly, if $D_{\text{opt}}(P, k)$ does not cover any of the four vertices of $c$, then it can cover only points in the vertical and horizontal strips of $G$ that contain $c$.
+
+However, each such strip contains at most $k/4$ points, and there are two such strips. It follows that $D_{\text{opt}}(P, k)$ contains at most $k/2$ points of $P$, a contradiction.
+
+Thus, $D_{\text{opt}}(P, k)$ must contain a point of $X$. Let $u$ be the center of $D_{opt}, and let $q \in X \cap D_{\text{opt}}.$ Then for any $t$ inside $D_{opt}$, we get that $\text{Distance}(q, t) \le \text{Distance}(q, u) + \text{Distance}(u, t) = 2r_{opt}$.
+Indeed, the disk of radius $2r_{\text{opt}}(P, k)$ centered at $q$ contains at least $k$ points of $P$ since it also covers $D_{\text{opt}}(P, k)$.
+
+---
+
+**Proof for the second lemma.** Let $C$ be the grid cell of $G_{\alpha}$ that realizes $gd_{\alpha}(P)$.
+
+Place 4 points at the corners of $C$ and one point in the center of $C$. Placing at each of those points a disk of radius $r_{\text{opt}}(P, k)$ completely covers $C$ (since the sidelength of $C$ is at most $2r_{\text{opt}}(P, k)$). Thus, $|P \cap C| = gd_{\alpha}(P) \le 5k$
+
+![bg right 90%](5k.png)
 
 ---
 
@@ -437,6 +468,14 @@ Then the algorithm finds $\Box_w$ the predecessor of $\Box$ in $T$.
 ---
 
 ## Insertion/Deletion in a compressed quadtree ##
+
+Let $q$ be a point to be inserted into the quadtree, and let $w$ be the node of the compressed quadtree such that $q \in rg_{w}$. There are several possibilities:
+
+(1) The node $w$ is a leaf, and there is no point associated with it. Then store $q$ at $w$, and return.
+
+(2) The node $w$ is a leaf, and there is a point $p$ already stored in $w$. In this case, compute the cell corresponding to $lca(p,q)$. if it equals to $w$, then just split w normally and store $p$, $q$ at their associated leaves. otherwise, hang it under $w$ (as w becomes a  compressed node), split it, and store the points in their leaves.
+
+(3) The node $w$ is a compressed node. Let $z$ be the child of $w$. Then insert $\Box$ = $lca(q, p)$ and all its children, store $q$ in its appropiate child, and hang $z$ on its appropiate child, making this child a new compressed node.
 
 
 
